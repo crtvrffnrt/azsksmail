@@ -53,7 +53,7 @@ check_azure_cloud_shell() {
 #                   Fancy Banner Introduction              #
 ############################################################
 display_banner() {
-    display_message "############################################################################" "cyan"
+    display_message "#######################################v3###################################" "cyan"
     display_message "#     ___ _____      ___    __ _______    _____ ____  ____  ____  ______   #" "cyan"
     display_message "#    /   /__  /     /   |  / //_/ ___/   / ___// __ \/ __ \/ __ \/ ____/   #" "cyan"
     display_message "#   / /| | / /     / /| | / ,<  \__ \    \__ \/ /_/ / / / / / / / /_       #" "cyan"
@@ -277,7 +277,6 @@ main() {
 
  # Deploy RDP container
 display_message "Deploying RDP Container..." "blue"
-
 cat <<EOF > rdp-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -348,32 +347,32 @@ display_message "RDP container is ready." "green"
 
 sleep 45
 
-    # Wait for public IP
-    while [[ -z "$public_ip" ]]; do
-        public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-        sleep 12
-    done
-    display_message "AKS Public IP assigned: $public_ip" "green"
+# Wait for public IP
+while [[ -z "$public_ip" ]]; do
+    public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+    sleep 12
+done
+display_message "AKS Public IP assigned: $public_ip" "green"
 
-    # Create Storage Account
-    display_message "Creating Storage Account: $storage_account_name ..." "blue"
-    az storage account create --name "$storage_account_name" \
-                              --resource-group "$resource_group" \
-                              --location "$location" \
-                              --sku Standard_LRS \
-                              >/dev/null 2>&1
-    
-    az storage blob service-properties update \
-       --account-name "$storage_account_name" \
-       --static-website \
-       --index-document "index.html" >/dev/null 2>&1
-    display_message "Storage Account created: $storage_account_name" "green"
+# Create Storage Account
+display_message "Creating Storage Account: $storage_account_name ..." "blue"
+az storage account create --name "$storage_account_name" \
+                          --resource-group "$resource_group" \
+                          --location "$location" \
+                          --sku Standard_LRS \
+                          >/dev/null 2>&1
 
-    # -------------------------------------------------------
-    # ALWAYS recreate index.html, using the newly found $public_ip
-    # -------------------------------------------------------
-    display_message "Creating index.html for redirect..." "blue"
-    cat <<EOF > "$index_file"
+az storage blob service-properties update \
+   --account-name "$storage_account_name" \
+   --static-website \
+   --index-document "index.html" >/dev/null 2>&1
+display_message "Storage Account created: $storage_account_name" "green"
+
+# -------------------------------------------------------
+# ALWAYS recreate index.html, using the newly found $public_ip
+# -------------------------------------------------------
+display_message "Creating index.html for redirect..." "blue"
+cat <<EOF > "$index_file"
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -390,43 +389,38 @@ sleep 45
 EOF 
 
 # Upload index.html to static website container
-    az storage blob upload \
-       --account-name "$storage_account_name" \
-       --container-name "\$web" \
-       --name "index.html" \
-       --file "$index_file" >/dev/null 2>&1
-
-    # Retrieve the actual primary web endpoint from Azure
-    local website_url
-    website_url=$(az storage account show \
-        --name "$storage_account_name" \
-        --resource-group "$resource_group" \
-        --query 'primaryEndpoints.web' \
-        -o tsv)
-
-    # Build HTML email body
-    email_body="<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body>"
-    email_body+="<p>Hi ${firstname},</p>"
-    email_body+="<p>Schau dir das bitte dringend bis heute Abend an!</p>"
-    email_body+="<p><a href=\"${website_url}\">https://www.abtis.de/emergency</a></p>"
-    email_body+="<p>&nbsp;</p>" 
-    email_body+="<p>Grüße</p>"
-    email_body+="</body></html>"    
-
-        # Send Email
-    display_message "Sending Email to $recipient ..." "blue"
-    send_email "$smtp_server" "$recipient" "$mail_address" "$subject" "$email_body"
-    display_message "Email sent successfully to $recipient." "green"
-
-    display_message "" "cyan"
-    display_message "############################################" "cyan"
-    display_message "RDP is available at: http://${public_ip}:6901/vnc.html?autoconnect=true&reconnect=true&resize=on&show_control_bar=false" "magenta"
-    display_message "Static site redirect link: ${website_url}" "magenta"
-    display_message "now navigate to rdp open https://mysignins.microsoft.com/security-info then F11" "cyan"
-    display_message "############################################" "cyan"
-    display_message "" "cyan"
-
-    # Ask user about ssh connection
+az storage blob upload \
+   --account-name "$storage_account_name" \
+   --container-name "\$web" \
+   --name "index.html" \
+   --file "$index_file" >/dev/null 2>&1
+# Retrieve the actual primary web endpoint from Azure
+local website_url
+website_url=$(az storage account show \
+    --name "$storage_account_name" \
+    --resource-group "$resource_group" \
+    --query 'primaryEndpoints.web' \
+    -o tsv)
+# Build HTML email body
+email_body="<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body>"
+email_body+="<p>Hi ${firstname},</p>"
+email_body+="<p>Schau dir das bitte dringend bis heute Abend an!</p>"
+email_body+="<p><a href=\"${website_url}\">https://www.abtis.de/emergency</a></p>"
+email_body+="<p>&nbsp;</p>" 
+email_body+="<p>Grüße</p>"
+email_body+="</body></html>"    
+    # Send Email
+display_message "Sending Email to $recipient ..." "blue"
+send_email "$smtp_server" "$recipient" "$mail_address" "$subject" "$email_body"
+display_message "Email sent successfully to $recipient." "green"
+display_message "" "cyan"
+display_message "############################################" "cyan"
+display_message "RDP is available at: http://${public_ip}:6901/vnc.html?autoconnect=true&reconnect=true&resize=on&show_control_bar=false" "magenta"
+display_message "Static site redirect link: ${website_url}" "magenta"
+display_message "now navigate to rdp open https://mysignins.microsoft.com/security-info then F11" "cyan"
+display_message "############################################" "cyan"
+display_message "" "cyan"
+# Ask user about ssh connection
  display_message "Please check your mailbox (including junk folder) for the test email." "yellow"
 read -p "Do you want to optionally connect via SSH to the cluster node? (yes/no): " next_step
 if [[ "$next_step" == "yes" ]]; then
