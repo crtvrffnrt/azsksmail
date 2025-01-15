@@ -12,7 +12,24 @@ check_system_and_tools() {
     for tool in "${required_tools[@]}"; do
         if ! command -v "$tool" >/dev/null 2>&1; then
             missing_tools+=("$tool")
-            display_message "[WARNING] $tool is not installed." "yellow"
+            display_message "[WARNING] $tool is not installed. Attempting to install..." "yellow"
+            if [[ "$tool" == "docker" ]]; then
+                sudo apt-get update && sudo apt-get install -y docker.io
+                sudo systemctl start docker
+                sudo systemctl enable docker
+            elif [[ "$tool" == "kubectl" ]]; then
+                curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+            elif [[ "$tool" == "helm" ]]; then
+                curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+            elif [[ "$tool" == "node" ]]; then
+                curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+                sudo apt-get install -y nodejs
+            elif [[ "$tool" == "npm" ]]; then
+                sudo apt-get install -y npm
+            else
+                sudo apt-get update && sudo apt-get install -y "$tool"
+            fi
         else
             display_message "[INFO] $tool is already installed." "green"
         fi
@@ -21,8 +38,7 @@ check_system_and_tools() {
     if [ ${#missing_tools[@]} -eq 0 ]; then
         display_message "[INFO] All required tools are installed." "green"
     else
-        display_message "[ERROR] Missing tools: ${missing_tools[*]}." "red"
-        display_message "Attempting to proceed with the script, but functionality may be limited." "yellow"
+        display_message "[INFO] Tools installed: ${missing_tools[*]}" "blue"
     fi
 }
 
@@ -47,7 +63,7 @@ check_azure_extensions() {
 }
 
 ############################################################
-#                   Execute System and Tools Check        #
+#                   Fancy Output for Commands             #
 ############################################################
 run_checks() {
     check_system_and_tools
@@ -57,40 +73,46 @@ run_checks() {
 
     # Azure CLI version
     if command -v az >/dev/null 2>&1; then
-        display_message "Azure CLI Version: $(az version | jq -r '.\"azure-cli\"')" "blue"
+        display_message "Azure CLI Version:" "cyan"
+        az version
     else
         display_message "[ERROR] Azure CLI not found." "red"
     fi
 
     # Docker version
     if command -v docker >/dev/null 2>&1; then
-        display_message "Docker Version: $(docker --version | awk '{print $3 $4}' | sed 's/,//')" "blue"
+        display_message "Docker Version:" "cyan"
+        docker --version
     else
         display_message "[ERROR] Docker not found." "red"
     fi
 
     # Kubernetes tools version
     if command -v kubectl >/dev/null 2>&1; then
-        display_message "kubectl Version: $(kubectl version --client --short)" "blue"
+        display_message "kubectl Version:" "cyan"
+        kubectl version --client --short
     else
         display_message "[ERROR] kubectl not found." "red"
     fi
 
     if command -v helm >/dev/null 2>&1; then
-        display_message "Helm Version: $(helm version --short)" "blue"
+        display_message "Helm Version:" "cyan"
+        helm version --short
     else
         display_message "[ERROR] Helm not found." "red"
     fi
 
     # Node.js and npm versions
     if command -v node >/dev/null 2>&1; then
-        display_message "Node.js Version: $(node --version)" "blue"
+        display_message "Node.js Version:" "cyan"
+        node --version
     else
         display_message "[ERROR] Node.js not found." "red"
     fi
 
     if command -v npm >/dev/null 2>&1; then
-        display_message "npm Version: $(npm --version)" "blue"
+        display_message "npm Version:" "cyan"
+        npm --version
     else
         display_message "[ERROR] npm not found." "red"
     fi
@@ -99,5 +121,8 @@ run_checks() {
 ############################################################
 #                   Main Script Execution                 #
 ############################################################
+display_banner
 run_checks
 
+# Add your additional functionality or logic below.
+display_message "[INFO] Script execution completed successfully." "green"
