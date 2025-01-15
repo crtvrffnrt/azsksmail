@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Author Patrick Binder
-## Version 2.0 Beta
+## Version 1.1
 ## Date 2025-01-01
 ## Filename azaksmail.sh
 
@@ -53,16 +53,16 @@ check_azure_cloud_shell() {
 #                   Fancy Banner Introduction              #
 ############################################################
 display_banner() {
-    display_message "🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄  V2 BETA  🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄" "cyan"🦄
-    display_message "🦄    ___ _____      ___    __ _______    _____ ____  ____  ____  ______   🦄" "cyan"🦄
-    display_message "🦄   /   /__  /     /   |  / //_/ ___/   / ___// __ \/ __ \/ __ \/ ____/   🦄" "cyan"🦄
-    display_message "🦄  / /| | / /     / /| | / ,<  \__ \    \__ \/ /_/ / / / / / / / /_       🦄" "cyan"🦄
-    display_message "🦄 / ___ |/ /__   / ___ |/ /| |___/ /   ___/ / ____/ /_/ / /_/ / __/       🦄" "cyan"🦄
-    display_message "🦄/_/  |_/____/  /_/  |_/_/ |_/____/   /____/_/    \____/\____/_/          🦄" "cyan"🦄
-    display_message "🦄                                                                         🦄" "cyan"🦄
-    display_message "🦄            Azure POC Mailing Tool - AZ AKS Spoof                        🦄" "cyan"🦄
-    display_message "🦄           Embedding RDP Environment in a website                        🦄" "cyan"🦄
-    display_message "🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄" "cyan"🦄
+    display_message "############################################################################" "cyan"
+    display_message "#     ___ _____      ___    __ _______    _____ ____  ____  ____  ______   #" "cyan"
+    display_message "#    /   /__  /     /   |  / //_/ ___/   / ___// __ \/ __ \/ __ \/ ____/   #" "cyan"
+    display_message "#   / /| | / /     / /| | / ,<  \__ \    \__ \/ /_/ / / / / / / / /_       #" "cyan"
+    display_message "#  / ___ |/ /__   / ___ |/ /| |___/ /   ___/ / ____/ /_/ / /_/ / __/       #" "cyan"
+    display_message "# /_/  |_/____/  /_/  |_/_/ |_/____/   /____/_/    \____/\____/_/          #" "cyan"
+    display_message "#                                                                          #" "cyan"
+    display_message "#            Azure POC Mailing Tool - AZ AKS Spoof                         #" "cyan"
+    display_message "#       🦄  Embedding RDP Environment in a website  🦄                    #" "cyan"
+    display_message "############################################################################" "cyan"
 }
 
 
@@ -275,48 +275,51 @@ main() {
     
     display_message "AKS Cluster created: $aks_name" "green"
 
-# Deploy RDP Container
-display_message "Deploying RDP Container..." "blue"
-{
-cat <<EOF > rdp-deployment.yaml
+  # Deploy RDP container
+    display_message "Deploying RDP Container..." "blue"
+    cat <<EOF > rdp-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: rdp
+  name: rdp
 spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            app: rdp
-    template:
-        metadata:
-            labels:
-                app: rdp
-        spec:
-            containers:
-            - name: rdp
-                image: soff/tiny-remote-desktop
-                ports:
-                - containerPort: 6901
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rdp
+  template:
+    metadata:
+      labels:
+        app: rdp
+    spec:
+      containers:
+      - name: rdp
+        image: soff/tiny-remote-desktop
+        ports:
+        - containerPort: 6901
 ---
 apiVersion: v1
 kind: Service
 metadata:
-    name: rdp-service
+  name: rdp-service
 spec:
-    selector:
-        app: rdp
-    ports:
-        - protocol: TCP
-            port: 6901
-            targetPort: 6901
-    type: LoadBalancer
+  selector:
+    app: rdp
+  ports:
+    - protocol: TCP
+      port: 6901
+      targetPort: 6901
+  type: LoadBalancer
 EOF
-}
-kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1
-display_message "Waiting for AKS to assign public IP..." "yellow"
-sleep 20
+    kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1
 
+    display_message "Waiting for AKS to assign public IP..." "yellow"
+    while [[ -z "$public_ip" ]]; do
+        public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+        sleep 10
+    done
+    display_message "AKS Public IP assigned: $public_ip" "green"
+sleep 45
 # Wait for public IP
 while [[ -z "$public_ip" ]]; do
     public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
@@ -378,9 +381,7 @@ sleep 45
 </head>
 <body></body>
 </html>
-EOF
-
-    # Upload index.html to static website container
+EOF # Upload index.html to static website container
     az storage blob upload \
        --account-name "$storage_account_name" \
        --container-name "\$web" \
