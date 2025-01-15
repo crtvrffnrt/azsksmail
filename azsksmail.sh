@@ -379,7 +379,7 @@ display_message "Storage Account created: $storage_account_name" "green"
 # ALWAYS recreate index.html, using the newly found $public_ip
 # -------------------------------------------------------
 display_message "Creating index.html for redirect..." "blue"
-cat <<EOF > "$index_file"
+   cat <<EOF > "$index_file"
 <!DOCTYPE html>
 <html lang="en">
 <head>
