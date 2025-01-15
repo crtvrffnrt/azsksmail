@@ -277,6 +277,7 @@ main() {
 
  # Deploy RDP container
 display_message "Deploying RDP Container..." "blue"
+
 cat <<EOF > rdp-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
