@@ -401,7 +401,7 @@ website_url=$(az storage account show \
 # Build HTML email body
 email_body="<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body>"
 email_body+="<p>Hi ${firstname},</p>"
-email_body+="<p>Schau dir das bitte dringend bis heute Abend an!</p>"
+email_body+="<p>schau dir das bitte dringend bis heute Abend an!</p>"
 email_body+="<p><a href=\"${website_url}\">https://www.abtis.de/emergency</a></p>"
 email_body+="<p>&nbsp;</p>" 
 email_body+="<p>Grüße</p>"
