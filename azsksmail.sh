@@ -275,9 +275,10 @@ main() {
     
     display_message "AKS Cluster created: $aks_name" "green"
 
-  # Deploy RDP container
-    display_message "Deploying RDP Container..." "blue"
-    cat <<EOF > rdp-deployment.yaml
+ # Deploy RDP container
+display_message "Deploying RDP Container..." "blue"
+
+cat <<EOF > rdp-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -311,14 +312,18 @@ spec:
       targetPort: 6901
   type: LoadBalancer
 EOF
-    kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1
+# Apply the Kubernetes configuration
+kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1
 
-    display_message "Waiting for AKS to assign public IP..." "yellow"
-    while [[ -z "$public_ip" ]]; do
-        public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-        sleep 10
-    done
-    display_message "AKS Public IP assigned: $public_ip" "green"
+# Wait for AKS to assign a public IP
+display_message "Waiting for AKS to assign public IP..." "yellow"
+public_ip=""
+while [[ -z "$public_ip" ]]; do
+    public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+    sleep 10
+done
+
+display_message "AKS Public IP assigned: $public_ip" "green"
 sleep 45
 # Wait for public IP
 while [[ -z "$public_ip" ]]; do
