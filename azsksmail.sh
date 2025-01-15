@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Author Patrick Binder
-## Version 0.7 BETA
+## Version 0.8 BETA
 ## Date 2025-01-01
 ## Filename azaksmail.sh
 
@@ -53,7 +53,7 @@ check_azure_cloud_shell() {
 #                   Fancy Banner Introduction              #
 ############################################################
 display_banner() {
-    display_message "##############################  v07 BETA  ##################################" "cyan"
+    display_message "##############################  v08 BETA  ##################################" "cyan"
     display_message "#     ___ _____      ___    __ _______    _____ ____  ____  ____  ______   #" "cyan"
     display_message "#    /   /__  /     /   |  / //_/ ___/   / ___// __ \/ __ \/ __ \/ ____/   #" "cyan"
     display_message "#   / /| | / /     / /| | / ,<  \__ \    \__ \/ /_/ / / / / / / / /_       #" "cyan"
