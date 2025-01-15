@@ -275,43 +275,49 @@ main() {
     
     display_message "AKS Cluster created: $aks_name" "green"
 
- # Deploy RDP container
-display_message "Deploying RDP Container..." "blue"
-
-cat <<EOF > rdp-deployment.yaml
+ # Create Kubernetes manifest for the deployment and service
+   cat <<EOF > tiny-remote-desktop-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rdp
+  name: tiny-remote-desktop
+  labels:
+    app: tiny-remote-desktop
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: rdp
+      app: tiny-remote-desktop
   template:
     metadata:
       labels:
-        app: rdp
+        app: tiny-remote-desktop
     spec:
       containers:
-      - name: rdp
+      - name: tiny-remote-desktop
         image: soff/tiny-remote-desktop
         ports:
         - containerPort: 6901
+        env:
+        - name: VNC_PASSWORD
+          value: "$vnc_password"
+        - name: RESOLUTION
+          value: "1920x1080"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: rdp-service
+  name: tiny-remote-desktop-service
 spec:
   selector:
-    app: rdp
+    app: tiny-remote-desktop
   ports:
-    - protocol: TCP
-      port: 6901
-      targetPort: 6901
+  - protocol: TCP
+    port: 6901
+    targetPort: 6901
   type: LoadBalancer
 EOF
+
 
 # Apply the Kubernetes configuration
 kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1
