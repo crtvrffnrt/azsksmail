@@ -393,7 +393,8 @@ display_message "Creating index.html for redirect..." "blue"
 </head>
 <body></body>
 </html>
-EOF 
+EOF
+
 
 # Upload index.html to static website container
 az storage blob upload \
