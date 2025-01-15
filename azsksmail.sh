@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Author Patrick Binder
-## Version 1.1
+## Version 1.2
 ## Date 2025-01-01
 ## Filename azaksmail.sh
 
