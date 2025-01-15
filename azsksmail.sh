@@ -53,16 +53,16 @@ check_azure_cloud_shell() {
 #                   Fancy Banner Introduction              #
 ############################################################
 display_banner() {
-    display_message "############################################################################" "cyan"
-    display_message "#     ___ _____      ___    __ _______    _____ ____  ____  ____  ______   #" "cyan"
-    display_message "#    /   /__  /     /   |  / //_/ ___/   / ___// __ \/ __ \/ __ \/ ____/   #" "cyan"
-    display_message "#   / /| | / /     / /| | / ,<  \__ \    \__ \/ /_/ / / / / / / / /_       #" "cyan"
-    display_message "#  / ___ |/ /__   / ___ |/ /| |___/ /   ___/ / ____/ /_/ / /_/ / __/       #" "cyan"
-    display_message "# /_/  |_/____/  /_/  |_/_/ |_/____/   /____/_/    \____/\____/_/          #" "cyan"
-    display_message "#                                                                          #" "cyan"
-    display_message "#            Azure POC Mailing Tool - AZ AKS Spoof                         #" "cyan"
-    display_message "#       🦄  Embedding RDP Environment in a website  🦄                    #" "cyan"
-    display_message "############################################################################" "cyan"
+    display_message "🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄  V2 BETA  🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄" "cyan"🦄
+    display_message "🦄    ___ _____      ___    __ _______    _____ ____  ____  ____  ______   🦄" "cyan"🦄
+    display_message "🦄   /   /__  /     /   |  / //_/ ___/   / ___// __ \/ __ \/ __ \/ ____/   🦄" "cyan"🦄
+    display_message "🦄  / /| | / /     / /| | / ,<  \__ \    \__ \/ /_/ / / / / / / / /_       🦄" "cyan"🦄
+    display_message "🦄 / ___ |/ /__   / ___ |/ /| |___/ /   ___/ / ____/ /_/ / /_/ / __/       🦄" "cyan"🦄
+    display_message "🦄/_/  |_/____/  /_/  |_/_/ |_/____/   /____/_/    \____/\____/_/          🦄" "cyan"🦄
+    display_message "🦄                                                                         🦄" "cyan"🦄
+    display_message "🦄            Azure POC Mailing Tool - AZ AKS Spoof                        🦄" "cyan"🦄
+    display_message "🦄           Embedding RDP Environment in a website                        🦄" "cyan"🦄
+    display_message "🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄" "cyan"🦄
 }
 
 
