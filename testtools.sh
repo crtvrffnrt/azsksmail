@@ -1,6 +1,34 @@
 #!/bin/bash
 
 ############################################################
+#                   Colorful Echo Function                 #
+############################################################
+display_message() {
+    local message="$1"
+    local color="$2"
+    case $color in
+        red)    echo -e "\033[91m${message}\033[0m" ;;
+        green)  echo -e "\033[92m${message}\033[0m" ;;
+        yellow) echo -e "\033[93m${message}\033[0m" ;;
+        blue)   echo -e "\033[94m${message}\033[0m" ;;
+        cyan)   echo -e "\033[96m${message}\033[0m" ;;
+        magenta)echo -e "\033[95m${message}\033[0m" ;;
+        *)      echo "$message" ;;
+    esac
+}
+
+############################################################
+#                   Fancy Banner Introduction              #
+############################################################
+display_banner() {
+    display_message "##############################  SCRIPT START  ##################################" "cyan"
+    display_message "#                                                                              #" "cyan"
+    display_message "#            Azure CLI Tools Installation and Validation Script               #" "cyan"
+    display_message "#                                                                              #" "cyan"
+    display_message "################################################################################" "cyan"
+}
+
+############################################################
 #                   System and Tools Check                #
 ############################################################
 check_system_and_tools() {
@@ -90,14 +118,14 @@ run_checks() {
     # Kubernetes tools version
     if command -v kubectl >/dev/null 2>&1; then
         display_message "kubectl Version:" "cyan"
-        kubectl version --client --short
+        kubectl version --client
     else
         display_message "[ERROR] kubectl not found." "red"
     fi
 
     if command -v helm >/dev/null 2>&1; then
         display_message "Helm Version:" "cyan"
-        helm version --short
+        helm version
     else
         display_message "[ERROR] Helm not found." "red"
     fi
