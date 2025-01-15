@@ -387,7 +387,9 @@ sleep 45
 </head>
 <body></body>
 </html>
-EOF # Upload index.html to static website container
+EOF 
+
+# Upload index.html to static website container
     az storage blob upload \
        --account-name "$storage_account_name" \
        --container-name "\$web" \
