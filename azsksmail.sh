@@ -312,6 +312,7 @@ spec:
       targetPort: 6901
   type: LoadBalancer
 EOF
+
 # Apply the Kubernetes configuration
 kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1
 
