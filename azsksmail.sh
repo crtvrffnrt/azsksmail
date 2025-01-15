@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Author Patrick Binder
-## Version 1.8 BETA
+## Version 2.0 Beta
 ## Date 2025-01-01
 ## Filename azaksmail.sh
 
@@ -61,7 +61,7 @@ display_banner() {
     display_message "# /_/  |_/____/  /_/  |_/_/ |_/____/   /____/_/    \____/\____/_/          #" "cyan"
     display_message "#                                                                          #" "cyan"
     display_message "#            Azure POC Mailing Tool - AZ AKS Spoof                         #" "cyan"
-    display_message "#            🦄 Embedding RDP Environment in a website🦄                   #" "cyan"
+    display_message "#       🦄  Embedding RDP Environment in a website  🦄                    #" "cyan"
     display_message "############################################################################" "cyan"
 }
 
@@ -275,48 +275,47 @@ main() {
     
     display_message "AKS Cluster created: $aks_name" "green"
 
-  # Deploy RDP Container
+# Deploy RDP Container
 display_message "Deploying RDP Container..." "blue"
+{
 cat <<EOF > rdp-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rdp
+    name: rdp
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: rdp
-  template:
-    metadata:
-      labels:
-        app: rdp
-    spec:
-      containers:
-      - name: rdp
-        image: soff/tiny-remote-desktop
-        ports:
-        - containerPort: 6901
+    replicas: 1
+    selector:
+        matchLabels:
+            app: rdp
+    template:
+        metadata:
+            labels:
+                app: rdp
+        spec:
+            containers:
+            - name: rdp
+                image: soff/tiny-remote-desktop
+                ports:
+                - containerPort: 6901
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: rdp-service
+    name: rdp-service
 spec:
-  selector:
-    app: rdp
-  ports:
-    - protocol: TCP
-      port: 6901
-      targetPort: 6901
-  type: LoadBalancer
+    selector:
+        app: rdp
+    ports:
+        - protocol: TCP
+            port: 6901
+            targetPort: 6901
+    type: LoadBalancer
 EOF
+}
 kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1
 display_message "Waiting for AKS to assign public IP..." "yellow"
-
-
-
-
+sleep 20
 
 # Wait for public IP
 while [[ -z "$public_ip" ]]; do
@@ -400,9 +399,9 @@ EOF
     email_body="<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body>"
     email_body+="<p>Hi ${firstname},</p>"
     email_body+="<p>Schau dir das bitte dringend bis heute Abend an!</p>"
-    email_body+="<p></p>"
-    email_body+="<p>Grüße</p>"
     email_body+="<p><a href=\"${website_url}\">https://www.abtis.de/emergency</a></p>"
+    email_body+="<p>&nbsp;</p>" 
+    email_body+="<p>Grüße</p>"
     email_body+="</body></html>"    
 
         # Send Email
