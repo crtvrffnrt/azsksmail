@@ -366,25 +366,52 @@ az storage blob service-properties update \
 display_message "Storage Account created: $storage_account_name" "green"
 
 # -------------------------------------------------------
-# ALWAYS recreate index.html, using the newly found $public_ip
 # -------------------------------------------------------
-# Create index.html for redirect
-display_message "Creating index.html for redirect..." "blue"
+# ALWAYS recreate index.html, embedding the RDP via iframe
+# -------------------------------------------------------
+# Create index.html with embedded iframe
+
+display_message "Creating index.html with embedded RDP iframe..." "blue"
 cat <<EOF > "$index_file"
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Redirect</title>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            window.location.href = "http://$public_ip:6901/";
-        });
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedded VNC</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            border-radius: 1px;
+            transform: scale(1.16);
+            transform-origin: center;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
 </head>
-<body></body>
+<body>
+    <div class="container">
+        <iframe src="http://$public_ip:6901/vnc.html?autoconnect=true&reconnect=true&resize=on&show_control_bar=false"></iframe>
+    </div>
+</body>
 </html>
 EOF
+
 
 # Upload index.html to static website container
 az storage blob upload \
