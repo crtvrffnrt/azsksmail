@@ -434,9 +434,7 @@ email_body+="<p><a href=\"${website_url}\">https://www.abtis.de/emergency</a></p
 email_body+="<p>&nbsp;</p>" 
 email_body+="<p>Grüße</p>"
 email_body+="</body></html>"    
-    # Send Email
-display_message "Sending Email to $recipient ..." "blue"
-send_email "$smtp_server" "$recipient" "$mail_address" "$subject" "$email_body"
+    # show web Email
 display_message "Email sent successfully to $recipient." "green"
 display_message "" "cyan"
 display_message "############################################" "cyan"
@@ -444,6 +442,11 @@ display_message "RDP is available at: http://${public_ip}:6901/vnc.html?autoconn
 display_message "Static site redirect link: ${website_url}" "magenta"
 display_message "now navigate to rdp open https://mysignins.microsoft.com/security-info then F11" "cyan"
 display_message "############################################" "cyan"
+sleep 60
+# send mail
+display_message "Sending Email to $recipient ..." "blue"
+send_email "$smtp_server" "$recipient" "$mail_address" "$subject" "$email_body"
+
 display_message "" "cyan"
 # Ask user about SSH connection
 display_message "Please check your mailbox (including junk folder) for the test email." "yellow"
